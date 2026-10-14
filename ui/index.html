@@ -224,6 +224,9 @@
   .job.cancelled .s { color: var(--muted); }
   .job.cancelled .bar { display: none; }
 
+  .credit { margin: 26px 0 0; text-align: center; color: var(--muted); font-size: 12px; letter-spacing: .3px; }
+  .credit b { color: var(--text); font-weight: 600; }
+
   @media (max-width: 640px) {
     main { margin: 0; border-radius: 0; padding: 16px; }
     .times { grid-template-columns: 1fr; }
@@ -326,6 +329,7 @@
 
   <div class="jobs-title" id="jobsTitle" hidden>Téléchargements</div>
   <section id="jobs"></section>
+  <p class="credit">Créé par <b>Fulbert Adeniyi</b></p>
 </main>
 
 <dialog id="settings" class="glass">
@@ -343,6 +347,7 @@
       <option value="firefox">Firefox</option>
       <option value="brave">Brave</option>
       <option value="opera">Opera</option>
+      <option value="safari">Safari (Mac)</option>
     </select>
     <p>Pour Instagram, Facebook, vidéos privées ou avec limite d'âge : choisis le navigateur où tu es connecté (ferme-le si l'accès est refusé).</p>
   </div>
@@ -351,6 +356,7 @@
     <div class="line"><button class="btn" id="update" style="flex:1">Mettre à jour yt-dlp</button><button class="btn" id="closeSettings">Fermer</button></div>
     <p>À faire si un site (souvent YouTube) se met à renvoyer des erreurs.</p>
   </div>
+  <p class="credit" style="margin-top:4px">VideoGrab · Créé par <b>Fulbert Adeniyi</b></p>
 </dialog>
 
 <div class="toast glass" id="toast"></div>

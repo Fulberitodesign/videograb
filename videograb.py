@@ -1,7 +1,9 @@
 """VideoGrab - telechargeur de videos et d'extraits pour le montage (B-roll).
+Cree par Fulbert Adeniyi.
 
 Petit serveur local (127.0.0.1) + interface web ouverte dans une fenetre
 d'application Edge/Chrome. Telechargement via yt-dlp, decoupe via ffmpeg.
+Fonctionne sur Windows et macOS.
 """
 import json
 import os
@@ -22,14 +24,44 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import yt_dlp
 from yt_dlp.utils import Popen as YtPopen, download_range_func
 
+IS_WIN = sys.platform == "win32"
+IS_MAC = sys.platform == "darwin"
+HOME = os.path.expanduser("~")
 HERE = os.path.dirname(os.path.abspath(__file__))
-CONFIG = os.path.join(HERE, "config.json")
+if IS_MAC:
+    DATA = os.path.join(HOME, "Library", "Application Support", "VideoGrab")
+    # Une app lancee depuis le Finder n'a pas le PATH de Homebrew
+    os.environ["PATH"] = os.pathsep.join(["/opt/homebrew/bin", "/usr/local/bin", os.environ.get("PATH", "")])
+else:
+    DATA = os.path.join(os.environ.get("LOCALAPPDATA", HOME), "VideoGrab")
+CONFIG = os.path.join(DATA, "config.json")
 UI = os.path.join(HERE, "ui", "index.html")
 ASSETS = {"logo.svg": "image/svg+xml", "logo.png": "image/png", "logo.ico": "image/x-icon"}
 TOKEN = secrets.token_hex(16)  # protege l'API contre les requetes d'autres sites
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+PYTHON = sys.executable.replace("pythonw.exe", "python.exe")  # version console pour pip / tkinter
 
-settings = {"outdir": os.path.join(os.path.expanduser("~"), "Videos", "VideoGrab"), "browser": ""}
+
+def find_ffmpeg():
+    """ffmpeg du systeme, sinon celui fourni par le paquet imageio-ffmpeg."""
+    if shutil.which("ffmpeg"):
+        return None
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        return None
+
+
+FFMPEG = find_ffmpeg()
+
+try:  # certificats a jour (le Python de python.org sur Mac n'en a pas par defaut)
+    import ssl
+    import certifi
+    SSL_CTX = ssl.create_default_context(cafile=certifi.where())
+except ImportError:
+    SSL_CTX = None
+settings = {"outdir": os.path.join(HOME, "Movies" if IS_MAC else "Videos", "VideoGrab"), "browser": ""}
 jobs = {}
 controls = {}       # id -> {"cancel": Event, "procs": [...], "stems": set()}
 thread_ctl = {}     # thread id -> controle du telechargement qui tourne dans ce thread
@@ -64,6 +96,7 @@ def load_settings():
 
 
 def save_settings():
+    os.makedirs(DATA, exist_ok=True)
     with open(CONFIG, "w", encoding="utf-8") as f:
         json.dump(settings, f, indent=2)
 
@@ -75,6 +108,8 @@ def clean_error(msg):
 
 def ydl_base():
     opts = {"quiet": True, "no_warnings": True, "noplaylist": True}
+    if FFMPEG:
+        opts["ffmpeg_location"] = FFMPEG
     if settings.get("browser"):
         opts["cookiesfrombrowser"] = (settings["browser"],)
     return opts
@@ -281,20 +316,31 @@ def api_download(b):
 
 def api_reveal(b):
     job = jobs.get(b.get("id") or "")
-    if job and job.get("file") and os.path.exists(job["file"]):
-        subprocess.Popen(["explorer", "/select,", os.path.normpath(job["file"])])
+    path = job.get("file") if job else None
+    if path and os.path.exists(path):
+        if IS_MAC:
+            subprocess.Popen(["open", "-R", path])
+        else:
+            subprocess.Popen(["explorer", "/select,", os.path.normpath(path)])
     else:
         os.makedirs(settings["outdir"], exist_ok=True)
-        os.startfile(settings["outdir"])
+        if IS_MAC:
+            subprocess.Popen(["open", settings["outdir"]])
+        else:
+            os.startfile(settings["outdir"])
     return {}
 
 
 def api_pick_folder(b):
-    code = ("import tkinter as t,tkinter.filedialog as f,sys;r=t.Tk();r.withdraw();"
-            "r.attributes('-topmost',1);sys.stdout.write(f.askdirectory(initialdir=sys.argv[1]) or '')")
-    py = sys.executable.replace("pythonw.exe", "python.exe")
-    r = subprocess.run([py, "-c", code, settings["outdir"]], capture_output=True, text=True,
-                       creationflags=NO_WINDOW)
+    if IS_MAC:
+        script = ('POSIX path of (choose folder with prompt "Dossier de telechargement" '
+                  'default location (POSIX file "%s"))' % settings["outdir"].replace('"', ""))
+        r = subprocess.run(["osascript", "-e", script], capture_output=True, text=True)
+    else:
+        code = ("import tkinter as t,tkinter.filedialog as f,sys;r=t.Tk();r.withdraw();"
+                "r.attributes('-topmost',1);sys.stdout.write(f.askdirectory(initialdir=sys.argv[1]) or '')")
+        r = subprocess.run([PYTHON, "-c", code, settings["outdir"]], capture_output=True, text=True,
+                           creationflags=NO_WINDOW)
     if r.stdout.strip():
         settings["outdir"] = os.path.normpath(r.stdout.strip())
         save_settings()
@@ -309,8 +355,7 @@ def api_settings(b):
 
 
 def api_update(b):
-    py = sys.executable.replace("pythonw.exe", "python.exe")
-    r = subprocess.run([py, "-m", "pip", "install", "-U", "yt-dlp[default]"],
+    r = subprocess.run([PYTHON, "-m", "pip", "install", "-U", "yt-dlp[default]"],
                        capture_output=True, text=True, creationflags=NO_WINDOW)
     if r.returncode:
         raise RuntimeError("Echec de la mise a jour : " + (r.stderr.strip().splitlines() or ["?"])[-1])
@@ -393,7 +438,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get("Range"):
             headers["Range"] = self.headers["Range"]
         try:
-            r = urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=20)
+            r = urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=20, context=SSL_CTX)
         except urllib.error.HTTPError as e:
             r = e
         except OSError:
@@ -413,14 +458,19 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def find_browser():
-    for p in (r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe",
-              r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe",
-              r"%ProgramFiles%\Google\Chrome\Application\chrome.exe",
-              r"%LocalAppData%\Google\Chrome\Application\chrome.exe"):
-        p = os.path.expandvars(p)
-        if os.path.exists(p):
-            return p
-    return None
+    """Navigateur Chromium capable d'ouvrir l'interface en fenetre d'application."""
+    if IS_MAC:
+        apps = ["Google Chrome.app/Contents/MacOS/Google Chrome",
+                "Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+                "Brave Browser.app/Contents/MacOS/Brave Browser"]
+        candidates = [os.path.join(root, a) for a in apps for root in ("/Applications", HOME + "/Applications")]
+    else:
+        candidates = [os.path.expandvars(p) for p in (
+            r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe",
+            r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe",
+            r"%ProgramFiles%\Google\Chrome\Application\chrome.exe",
+            r"%LocalAppData%\Google\Chrome\Application\chrome.exe")]
+    return next((p for p in candidates if os.path.exists(p)), None)
 
 
 def main():
@@ -431,7 +481,7 @@ def main():
 
     exe = find_browser()
     if exe:
-        profile = os.path.join(os.environ.get("LOCALAPPDATA", HERE), "VideoGrab", "window")
+        profile = os.path.join(DATA, "window")
         subprocess.Popen([exe, f"--app={url}", f"--user-data-dir={profile}", "--window-size=1100,900",
                           "--no-first-run", "--no-default-browser-check",
                           "--disable-background-timer-throttling", "--disable-renderer-backgrounding",

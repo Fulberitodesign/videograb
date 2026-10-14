@@ -3,7 +3,9 @@
 <h1 align="center">VideoGrab</h1>
 
 <p align="center">Téléchargez une vidéo complète ou <b>juste l'extrait</b> dont votre montage a besoin.<br>
-YouTube, TikTok, Instagram, Vimeo, X et plus de 1000 sites · MP4 H.264 prêt pour le montage · Windows 10/11</p>
+YouTube, TikTok, Instagram, Vimeo, X et plus de 1000 sites · MP4 H.264 prêt pour le montage · Windows et macOS</p>
+
+<p align="center"><i>Créé par <b>Fulbert Adeniyi</b></i></p>
 
 <p align="center"><a href="https://Fulberitodesign.github.io/videograb/">Site</a> · <a href="https://github.com/Fulberitodesign/videograb/archive/refs/heads/main.zip">Télécharger</a></p>
 
@@ -31,13 +33,28 @@ YouTube, TikTok, Instagram, Vimeo, X et plus de 1000 sites · MP4 H.264 prêt po
 
 ## Installation
 
+### Windows 10 / 11
 1. [Téléchargez le ZIP](https://github.com/Fulberitodesign/videograb/archive/refs/heads/main.zip) et décompressez-le.
 2. Double-cliquez sur `installer.bat`. Il installe Python, yt-dlp et FFmpeg si besoin, copie l'application dans `%LOCALAPPDATA%\Programs\VideoGrab` et crée les raccourcis (Bureau + menu Démarrer).
 3. Lancez **VideoGrab** depuis le raccourci.
 
-Pour le retirer : `desinstaller.bat` (dans le dossier d'installation). Vos vidéos sont conservées.
+Ou en une ligne dans PowerShell :
+```powershell
+irm https://raw.githubusercontent.com/Fulberitodesign/videograb/main/setup/install.ps1 | iex
+```
+Désinstaller : `desinstaller.bat` dans le dossier d'installation.
 
-Sans installer : `lancer.bat` démarre l'application depuis le dossier décompressé.
+### macOS 11+ (puce Apple ou Intel)
+Dans le Terminal :
+```bash
+curl -fsSL https://raw.githubusercontent.com/Fulberitodesign/videograb/main/setup/install-mac.sh | bash
+```
+L'application **VideoGrab.app** est créée dans `~/Applications` avec son icône. Python 3.10+ est requis (installé via Homebrew si disponible, sinon la page python.org s'ouvre). FFmpeg est installé via Homebrew ou, à défaut, fourni par `imageio-ffmpeg`.
+
+Ou depuis le ZIP : clic droit sur `installer-mac.command` → Ouvrir.
+Désinstaller : `~/Applications/VideoGrab.app/Contents/Resources/uninstall-mac.sh`.
+
+Vos vidéos téléchargées sont toujours conservées.
 
 ## Fonctionnement
 
@@ -51,4 +68,4 @@ Ne téléchargez que des contenus que vous avez le droit d'utiliser : vos propre
 
 ## Licence
 
-[MIT](LICENSE)
+[MIT](LICENSE) — © 2026 Fulbert Adeniyi

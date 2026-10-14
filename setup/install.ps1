@@ -1,7 +1,8 @@
 param([switch]$Silent)
 # Installation de VideoGrab pour l'utilisateur courant (aucun droit administrateur requis).
+# Cree par Fulbert Adeniyi. Installation en une ligne (PowerShell) :
+#   irm https://raw.githubusercontent.com/Fulberitodesign/videograb/main/setup/install.ps1 | iex
 
-$src  = Split-Path -Parent $PSScriptRoot
 $dest = Join-Path $env:LOCALAPPDATA 'Programs\VideoGrab'
 
 function Step($msg) { Write-Host "`n> $msg" -ForegroundColor Cyan }
@@ -11,6 +12,19 @@ function Finish($code) {
 }
 
 Write-Host '=== Installation de VideoGrab ===' -ForegroundColor Magenta
+Write-Host 'Cree par Fulbert Adeniyi'
+
+# 0. Fichiers de l'application : dossier du script, sinon telechargement depuis GitHub
+$src = if ($PSScriptRoot) { Split-Path -Parent $PSScriptRoot } else { $null }
+if (-not $src -or -not (Test-Path (Join-Path $src 'videograb.py'))) {
+    Step 'Telechargement de VideoGrab...'
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $tmp = Join-Path $env:TEMP ('videograb-' + [guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+    Invoke-WebRequest 'https://github.com/Fulberitodesign/videograb/archive/refs/heads/main.zip' -OutFile "$tmp\videograb.zip" -UseBasicParsing
+    Expand-Archive "$tmp\videograb.zip" $tmp -Force
+    $src = Join-Path $tmp 'videograb-main'
+}
 
 # 1. Python
 $version = $null
