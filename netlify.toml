@@ -1,0 +1,9 @@
+# Site de presentation de VideoGrab (dossier docs/), aucune compilation necessaire.
+[build]
+  publish = "docs"
+  command = ""
+
+[[headers]]
+  for = "/demo/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
