@@ -7,7 +7,7 @@ YouTube, TikTok, Instagram, Vimeo, X et plus de 1000 sites · MP4 H.264 prêt po
 
 <p align="center"><i>Créé par <b>Fulbert Adeniyi</b></i></p>
 
-<p align="center"><a href="https://Fulberitodesign.github.io/videograb/">Site</a> · <a href="https://github.com/Fulberitodesign/videograb/archive/refs/heads/main.zip">Télécharger</a></p>
+<p align="center"><a href="https://videograb-fulbert.netlify.app/">Site</a> · <a href="https://github.com/Fulberitodesign/videograb/archive/refs/heads/main.zip">Télécharger</a></p>
 
 ---
 
@@ -60,7 +60,7 @@ Vos vidéos téléchargées sont toujours conservées.
 
 `videograb.py` démarre un petit serveur local (`127.0.0.1`, protégé par un jeton) et ouvre l'interface (`ui/index.html`) dans une fenêtre d'application Edge ou Chrome. Les téléchargements utilisent [yt-dlp](https://github.com/yt-dlp/yt-dlp) et [FFmpeg](https://ffmpeg.org).
 
-Le site de présentation se trouve dans `docs/` (GitHub Pages).
+Le site de présentation se trouve dans `docs/` (Netlify : https://videograb-fulbert.netlify.app).
 
 ## Droits
 
