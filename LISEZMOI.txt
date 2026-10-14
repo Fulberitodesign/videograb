@@ -1,0 +1,42 @@
+VIDEOGRAB - Telechargeur de videos et d'extraits pour le montage
+=================================================================
+
+INSTALLATION (une seule fois)
+  1. Double-cliquez sur installer.bat
+     -> installe Python, yt-dlp et ffmpeg si besoin, copie VideoGrab dans
+        %LOCALAPPDATA%\Programs\VideoGrab et cree les raccourcis
+        "VideoGrab" sur le Bureau et dans le menu Demarrer.
+  Pour desinstaller : desinstaller.bat dans le dossier d'installation
+  (vos videos telechargees sont conservees).
+
+UTILISATION
+  1. Lancez VideoGrab (raccourci Bureau ou lancer.bat) : une fenetre s'ouvre.
+  2. Collez un lien (YouTube, Vimeo, TikTok, Instagram, Facebook, X, Dailymotion,
+     Reddit... 1000+ sites) puis cliquez "Charger".
+  3. Mode "Extrait" : choisissez le passage
+     - en glissant les poignees blanches de la timeline (ou la zone coloree),
+     - ou en tapant les temps Debut / Fin (ex. 1:25 ou 00:01:25.5),
+     - ou pendant la lecture avec les touches I (debut) et O (fin).
+     "Lire l'extrait" rejoue le passage en boucle pour verifier.
+     Raccourcis : Espace lecture/pause, fleches +/-1 s (Maj +/-5 s),
+     virgule / point = image par image.
+     Mode "Video complete" : telecharge toute la video.
+  4. Qualite (Max, 1080p, 720p, 480p) ou audio seul (MP3 / WAV), puis options :
+     - MP4 H.264 : lisible directement dans Premiere, Resolve, Final Cut, CapCut
+       (la 4K YouTube n'existe souvent qu'en VP9/AV1 : decochez pour la 4K).
+     - Sans le son : B-roll muet.
+     - Coupe precise a l'image : decoupe exacte (decochez pour aller plus vite).
+  5. "Telecharger". Le bouton "Afficher" ouvre le fichier dans l'Explorateur.
+     Dossier par defaut : Videos\VideoGrab (modifiable dans Reglages, roue dentee).
+
+EN CAS DE PROBLEME
+  - "Erreur" sur YouTube apres quelques semaines : cliquez Reglages > "Mettre a jour yt-dlp"
+    puis relancez l'appli (YouTube change souvent, yt-dlp suit).
+  - Instagram / Facebook / video privee ou avec limite d'age : choisissez dans
+    Reglages > "Cookies du navigateur" le navigateur ou vous etes connecte au site
+    (fermez ce navigateur avant de telecharger si Chrome/Edge bloque l'acces).
+
+DROITS
+  Utilisez uniquement des contenus pour lesquels vous avez les droits
+  (licence Creative Commons, accord de l'auteur, vos propres videos,
+  banques libres de droits...). Telecharger n'accorde aucun droit d'utilisation.

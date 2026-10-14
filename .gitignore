@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+config.json
+build/*.png
+build/crop.py
