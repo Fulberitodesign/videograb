@@ -351,6 +351,10 @@ def api_settings(b):
     if "browser" in b:
         settings["browser"] = b["browser"] or ""
         save_settings()
+    if "volume" in b:
+        settings["volume"] = min(1.0, max(0.0, float(b["volume"])))
+        settings["muted"] = bool(b.get("muted"))
+        save_settings()
     return settings
 
 
@@ -473,12 +477,109 @@ def find_browser():
     return next((p for p in candidates if os.path.exists(p)), None)
 
 
+APP_ID = "FulbertAdeniyi.VideoGrab"
+
+
+def brand_taskbar_windows():
+    """Donne a la fenetre (Edge/Chrome en mode application) l'identite VideoGrab dans la barre des taches.
+
+    Sans cela, Windows la range avec le navigateur : une icone epinglee pointe vers une adresse
+    temporaire et disparait a la fermeture. On fixe l'AppUserModelID et la commande de relance.
+    """
+    import ctypes
+    from ctypes import wintypes
+
+    user32, shell32, ole32 = ctypes.windll.user32, ctypes.windll.shell32, ctypes.windll.ole32
+
+    class GUID(ctypes.Structure):
+        _fields_ = [("d1", ctypes.c_ulong), ("d2", ctypes.c_ushort), ("d3", ctypes.c_ushort), ("d4", ctypes.c_ubyte * 8)]
+
+    class PROPERTYKEY(ctypes.Structure):
+        _fields_ = [("fmtid", GUID), ("pid", ctypes.c_ulong)]
+
+    class PROPVARIANT(ctypes.Structure):
+        _fields_ = [("vt", ctypes.c_ushort), ("r1", ctypes.c_ushort), ("r2", ctypes.c_ushort), ("r3", ctypes.c_ushort),
+                    ("val", ctypes.c_void_p), ("pad", ctypes.c_void_p)]
+
+    def guid(text):
+        g = GUID()
+        ole32.CLSIDFromString(text, ctypes.byref(g))
+        return g
+
+    VT_LPWSTR = 31
+    FMT = guid("{9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3}")  # PKEY_AppUserModel_*
+    IID_STORE = guid("{886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99}")
+    pythonw = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
+    props = [  # identite, icone, commande de relance, nom affiche
+        (5, APP_ID),
+        (3, os.path.join(HERE, "ui", "logo.ico") + ",0"),
+        (2, f'"{pythonw}" "{os.path.abspath(__file__)}"'),
+        (4, "VideoGrab"),
+    ]
+    shell32.SHGetPropertyStoreForWindow.argtypes = [wintypes.HWND, ctypes.POINTER(GUID), ctypes.POINTER(ctypes.c_void_p)]
+    SET = ctypes.WINFUNCTYPE(ctypes.c_long, ctypes.c_void_p, ctypes.POINTER(PROPERTYKEY), ctypes.POINTER(PROPVARIANT))
+    GET = SET
+    NOARG = ctypes.WINFUNCTYPE(ctypes.c_long, ctypes.c_void_p)
+
+    def with_store(hwnd, fn):
+        store = ctypes.c_void_p()
+        if shell32.SHGetPropertyStoreForWindow(hwnd, ctypes.byref(IID_STORE), ctypes.byref(store)) != 0:
+            return None
+        vtbl = ctypes.cast(ctypes.cast(store, ctypes.POINTER(ctypes.c_void_p))[0], ctypes.POINTER(ctypes.c_void_p))
+        try:
+            return fn(store, vtbl)
+        finally:
+            NOARG(vtbl[2])(store)  # Release
+
+    def current_id(store, vtbl):
+        pv = PROPVARIANT()
+        GET(vtbl[5])(store, ctypes.byref(PROPERTYKEY(FMT, 5)), ctypes.byref(pv))
+        value = ctypes.wstring_at(pv.val) if pv.vt == VT_LPWSTR and pv.val else None
+        ole32.PropVariantClear(ctypes.byref(pv))
+        return value
+
+    def apply(store, vtbl):
+        if current_id(store, vtbl) == APP_ID:
+            return
+        for pid, text in props:
+            buf = ctypes.create_unicode_buffer(text)
+            pv = PROPVARIANT(vt=VT_LPWSTR, val=ctypes.cast(buf, ctypes.c_void_p))
+            SET(vtbl[6])(store, ctypes.byref(PROPERTYKEY(FMT, pid)), ctypes.byref(pv))
+        NOARG(vtbl[7])(store)  # Commit
+
+    WNDENUMPROC = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+
+    def app_windows():
+        found = []
+
+        def visit(hwnd, _):
+            title, cls = ctypes.create_unicode_buffer(64), ctypes.create_unicode_buffer(64)
+            user32.GetWindowTextW(hwnd, title, 64)
+            user32.GetClassNameW(hwnd, cls, 64)
+            if title.value == "VideoGrab" and cls.value.startswith("Chrome_WidgetWin") and user32.IsWindowVisible(hwnd):
+                found.append(hwnd)
+            return True
+        user32.EnumWindows(WNDENUMPROC(visit), 0)
+        return found
+
+    ole32.CoInitialize(None)
+    while True:
+        try:
+            for hwnd in app_windows():
+                with_store(hwnd, apply)
+        except Exception:
+            pass
+        time.sleep(1.5)
+
+
 def main():
     load_settings()
     srv = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     url = f"http://127.0.0.1:{srv.server_address[1]}/"
     threading.Thread(target=srv.serve_forever, daemon=True).start()
 
+    if IS_WIN:
+        threading.Thread(target=brand_taskbar_windows, daemon=True).start()
     exe = find_browser()
     if exe:
         profile = os.path.join(DATA, "window")

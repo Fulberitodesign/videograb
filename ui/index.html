@@ -215,6 +215,20 @@
   .hud.show { opacity: 1; transform: translate(-50%, 0); }
   .hud .cap { min-width: 26px; height: 26px; font-size: 12px; }
 
+  /* Volume */
+  .vol { position: absolute; right: 12px; bottom: 12px; z-index: 5; display: flex; align-items: center; gap: 8px;
+         padding: 6px 12px 6px 6px; border-radius: 14px; background: rgba(10,10,20,.5);
+         backdrop-filter: blur(14px); border: 1px solid var(--stroke-2); }
+  .vol-btn { width: 32px; height: 32px; border-radius: 10px; border: 0; display: grid; place-items: center;
+             background: rgba(255,255,255,.1); color: #fff; transition: .2s; }
+  .vol-btn:hover { background: rgba(255,255,255,.2); }
+  .vol-btn svg { width: 18px; height: 18px; }
+  .vol input[type=range] { -webkit-appearance: none; appearance: none; width: 96px; height: 4px; border-radius: 4px; cursor: pointer;
+         background: linear-gradient(90deg, var(--accent), var(--accent-2)) 0 / var(--v, 100%) 100% no-repeat, rgba(255,255,255,.2); }
+  .vol input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+         background: #fff; box-shadow: 0 0 0 3px rgba(139,123,255,.45); }
+  .vol-val { min-width: 26px; font: 600 12px "Cascadia Mono", Consolas, monospace; color: rgba(255,255,255,.85); text-align: right; }
+
   /* Actions des telechargements */
   .jact { display: flex; gap: 6px; align-items: center; }
   .btn.cancel:hover { border-color: rgba(255,107,138,.6); color: var(--danger); }
@@ -262,6 +276,11 @@
       <video id="video" preload="metadata" playsinline></video>
       <button class="bigplay" id="bigplay" aria-label="Lecture"><span><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></span></button>
       <div class="hud" id="hud"></div>
+      <div class="vol" id="vol">
+        <button class="vol-btn" id="volBtn" type="button" title="Couper / remettre le son (M)" aria-label="Couper le son"></button>
+        <input type="range" id="volRange" min="0" max="100" step="1" value="100" aria-label="Volume" title="Volume (↑ ↓)">
+        <span class="vol-val" id="volVal">100</span>
+      </div>
       <div class="nopreview" id="nopreview" hidden>Aperçu indisponible pour ce site — règle les temps à la main.</div>
     </div>
     <div class="meta"><h2 id="title"></h2><span id="sub"></span></div>
@@ -304,6 +323,7 @@
         <span class="k" data-key="shift"><span class="cap">Maj</span><span class="plus">+</span><span class="cap">←</span><span class="cap">→</span><span class="lbl">±5 s</span></span>
         <span class="k" data-key="frame"><span class="cap">,</span><span class="cap">.</span><span class="lbl">Image par image</span></span>
         <span class="k" data-key="m"><span class="cap">M</span><span class="lbl">Son on / off</span></span>
+        <span class="k" data-key="vol"><span class="cap">↑</span><span class="cap">↓</span><span class="lbl">Volume</span></span>
       </div>
       <p class="hint">Astuce : glisse les poignées blanches, ou la zone colorée pour déplacer tout l'extrait.</p>
     </div>
@@ -380,7 +400,38 @@ video.addEventListener("pause", () => audio.pause());
 video.addEventListener("waiting", () => audio.pause());
 video.addEventListener("seeked", () => syncAudio(true));
 video.addEventListener("ratechange", () => { audio.playbackRate = video.playbackRate; });
-video.addEventListener("volumechange", () => { audio.muted = video.muted; });
+/* ---------- volume (s'applique aussi a la piste son separee) */
+const VOL_ICONS = {
+  mute: '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9.5l5 5M22 9.5l-5 5"/>',
+  low: '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 9.5a3.5 3.5 0 0 1 0 5"/>',
+  high: '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 9.5a3.5 3.5 0 0 1 0 5"/><path d="M19 7a7 7 0 0 1 0 10"/>',
+};
+let volSaveTimer, volLoaded = false;
+function syncVolume() {
+  audio.volume = video.volume; audio.muted = video.muted;
+  const pct = video.muted ? 0 : Math.round(video.volume * 100);
+  $("#volRange").value = pct;
+  $("#volRange").style.setProperty("--v", pct + "%");
+  $("#volVal").textContent = pct;
+  const icon = pct === 0 ? "mute" : pct < 50 ? "low" : "high";
+  $("#volBtn").innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${VOL_ICONS[icon]}</svg>`;
+  $("#volBtn").setAttribute("aria-label", pct === 0 ? "Remettre le son" : "Couper le son");
+  if (!volLoaded) return;
+  clearTimeout(volSaveTimer);  // memorise le volume pour la prochaine ouverture
+  volSaveTimer = setTimeout(() => api("/api/settings", { volume: video.volume, muted: video.muted }).catch(() => { }), 600);
+}
+function setVolume(v) {
+  video.volume = clamp(v, 0, 1);
+  video.muted = video.volume === 0;
+}
+function toggleMute() {
+  if (video.muted || video.volume === 0) { if (video.volume === 0) video.volume = 0.5; video.muted = false; }
+  else video.muted = true;
+}
+video.addEventListener("volumechange", syncVolume);
+$("#volRange").addEventListener("input", e => setVolume(e.target.value / 100));
+$("#volBtn").onclick = toggleMute;
+syncVolume();
 
 /* ---------- utilitaires */
 function fmt(t) {
@@ -589,7 +640,14 @@ document.addEventListener("keydown", e => {
         hud(`<span class="cap">P</span> ${state.loop && !video.paused ? "Lecture de l'extrait" : "Pause"}`);
       } break;
     case "m": case "M":
-      video.muted = !video.muted; flash("m"); hud(`<span class="cap">M</span> ${video.muted ? "Son coupé" : "Son activé"}`); break;
+      toggleMute(); flash("m"); hud(`<span class="cap">M</span> ${video.muted ? "Son coupé" : "Son activé"}`); break;
+    case "ArrowUp": case "ArrowDown": {
+      e.preventDefault();
+      const base = video.muted ? 0 : video.volume;
+      setVolume(Math.round((base + (e.key === "ArrowUp" ? 0.1 : -0.1)) * 10) / 10);
+      flash("vol"); hud(`<span class="cap">${e.key === "ArrowUp" ? "↑" : "↓"}</span> Volume ${video.muted ? 0 : Math.round(video.volume * 100)} %`);
+      break;
+    }
     case "ArrowLeft": case "ArrowRight": {
       e.preventDefault(); if (t === null) break;
       const step = (e.key === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 5 : 1);
@@ -706,6 +764,9 @@ $("#openFolder").onclick = () => api("/api/reveal", {}).catch(e => toast(e.messa
 setInterval(() => api("/api/ping").catch(() => { }), 5000);
 api("/api/ping").catch(() => { });
 pollJobs();
+api("/api/settings", null, "GET").then(s => {  // volume de la derniere session
+  if (typeof s.volume === "number") { video.volume = clamp(s.volume, 0, 1); video.muted = !!s.muted; }
+}).catch(() => { }).finally(() => { volLoaded = true; });
 $("#url").focus();
 </script>
 </body>
