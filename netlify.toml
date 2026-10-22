@@ -1,6 +1,9 @@
-# Site de presentation de VideoGrab (dossier docs/), aucune compilation necessaire.
+# Site de presentation de VideoGrab : seulement le dossier docs/.
+# base = "docs" evite que Netlify installe les dependances de l'application Electron
+# (package.json a la racine), inutiles pour une page web.
 [build]
-  publish = "docs"
+  base = "docs"
+  publish = "."
   command = ""
 
 [[headers]]
