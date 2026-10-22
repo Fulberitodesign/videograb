@@ -1,0 +1,74 @@
+name: Build & Release
+
+# Se declenche quand on pousse un tag de version (ex: v2.0.0),
+# ou manuellement depuis l'onglet "Actions" de GitHub ("Run workflow").
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+            script: dist:win
+            arch: ""
+          - name: mac-apple-silicon
+            os: macos-latest
+            script: dist:mac
+            arch: ""
+          - name: mac-intel
+            os: macos-latest
+            script: dist:mac-x64
+            arch: x64
+    runs-on: ${{ matrix.os }}
+    env:
+      # Pour le Mac Intel : ffmpeg-static telecharge la version x64
+      npm_config_arch: ${{ matrix.arch }}
+    steps:
+      - name: Recuperer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Installer les dependances
+        run: npm install
+
+      - name: Construire l'installeur (${{ matrix.name }})
+        run: npm run ${{ matrix.script }}
+
+      - name: Sauvegarder l'installeur construit
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.name }}
+          path: |
+            dist/*.exe
+            dist/*.dmg
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Recuperer tous les installeurs construits
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Publier une nouvelle Release GitHub avec les installeurs
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          generate_release_notes: true

@@ -6,10 +6,10 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 src = Image.open(os.path.join(ROOT, "build", "logo_1024.png")).convert("RGBA")
 
-src.save(os.path.join(ROOT, "ui", "logo.ico"),
+src.save(os.path.join(ROOT, "build", "icon.ico"),
          sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
 src.resize((256, 256), Image.LANCZOS).save(os.path.join(ROOT, "ui", "logo.png"))
-src.save(os.path.join(ROOT, "ui", "logo.icns"))  # icone de l'application macOS
+src.save(os.path.join(ROOT, "build", "icon.icns"))  # icone de l'application macOS
 
 site = os.path.join(ROOT, "docs")
 os.makedirs(site, exist_ok=True)

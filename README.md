@@ -3,22 +3,41 @@
 <h1 align="center">VideoGrab</h1>
 
 <p align="center">Téléchargez une vidéo complète ou <b>juste l'extrait</b> dont votre montage a besoin.<br>
-YouTube, TikTok, Instagram, Vimeo, X et plus de 1000 sites · MP4 H.264 prêt pour le montage · Windows et macOS</p>
+YouTube, TikTok, Instagram, Vimeo, X et plus de 1000 sites · MP4 H.264, MP3 320 kb/s ou WAV · Windows et macOS</p>
 
 <p align="center"><i>Créé par <b>Fulbert Adeniyi</b></i></p>
 
-<p align="center"><a href="https://videograb-fulbert.netlify.app/">Site</a> · <a href="https://github.com/Fulberitodesign/videograb/archive/refs/heads/main.zip">Télécharger</a></p>
+<p align="center">
+  <a href="https://github.com/Fulberitodesign/videograb/releases/latest/download/VideoGrab-Setup.exe"><b>Télécharger pour Windows</b></a> ·
+  <a href="https://github.com/Fulberitodesign/videograb/releases/latest">macOS</a> ·
+  <a href="https://videograb-fulbert.netlify.app/">Site</a>
+</p>
 
 ---
 
 ## Fonctions
 
 - **Extraits précis** : choisissez le début et la fin sur une timeline, en tapant les temps ou avec les touches `I` / `O`. Seul ce passage est téléchargé, coupé à l'image près.
-- **Aperçu avec le son** et lecture de l'extrait en boucle avant de télécharger.
-- **Prêt pour le montage** : MP4 H.264 + AAC par défaut (Premiere Pro, DaVinci Resolve, Final Cut, CapCut).
-- **Qualité au choix** : 480p à 4K, vidéo sans le son (B-roll), audio seul MP3 / WAV.
-- **Annulation** des téléchargements en cours, fichiers partiels supprimés.
-- **100 % local** : aucun compte, rien n'est envoyé ailleurs.
+- **Aperçu avec le son**, lecture de l'extrait en boucle et contrôle du volume.
+- **Prêt pour le montage** : MP4 H.264 + AAC (Premiere Pro, DaVinci Resolve, Final Cut, CapCut), de 480p à 4K, avec ou sans le son.
+- **Audio** : MP3 320 kb/s constant ou WAV PCM 16 bits, en stéréo.
+- **Convertir une vidéo MP4 en MP3 haute qualité** : glissez une vidéo de votre ordinateur dans la fenêtre.
+- **Annulation** des téléchargements en cours, sans fichier partiel laissé.
+- **Tout est intégré** : yt-dlp et FFmpeg sont inclus, rien d'autre à installer.
+
+## Installation
+
+### Windows 10 / 11
+Téléchargez [`VideoGrab-Setup.exe`](https://github.com/Fulberitodesign/videograb/releases/latest/download/VideoGrab-Setup.exe) et double-cliquez dessus. VideoGrab s'installe avec ses raccourcis (Bureau et menu Démarrer).
+Si Windows affiche « Windows a protégé votre ordinateur » : **Informations complémentaires → Exécuter quand même**.
+Désinstaller : Paramètres → Applications → VideoGrab.
+
+### macOS 11+ (puce Apple ou Intel)
+Dans le Terminal :
+```bash
+curl -fsSL https://raw.githubusercontent.com/Fulberitodesign/videograb/main/setup/install-mac.sh | bash
+```
+Ou téléchargez le `.dmg` depuis la [dernière version](https://github.com/Fulberitodesign/videograb/releases/latest) (`arm64` = puce Apple, `x64` = Intel), glissez VideoGrab dans Applications, puis la première fois : clic droit → Ouvrir.
 
 ## Raccourcis clavier
 
@@ -29,38 +48,23 @@ YouTube, TikTok, Instagram, Vimeo, X et plus de 1000 sites · MP4 H.264 prêt po
 | `P` | Lire l'extrait en boucle |
 | `←` `→` | ±1 s (`Maj` : ±5 s) |
 | `,` `.` | Image précédente / suivante |
+| `↑` `↓` | Volume |
 | `M` | Couper / remettre le son |
 
-## Installation
+## Développement
 
-### Windows 10 / 11
-1. [Téléchargez le ZIP](https://github.com/Fulberitodesign/videograb/archive/refs/heads/main.zip) et décompressez-le.
-2. Double-cliquez sur `installer.bat`. Il installe Python, yt-dlp et FFmpeg si besoin, copie l'application dans `%LOCALAPPDATA%\Programs\VideoGrab` et crée les raccourcis (Bureau + menu Démarrer).
-3. Lancez **VideoGrab** depuis le raccourci.
+Application [Electron](https://www.electronjs.org/) : `main.js` (processus principal : téléchargements via yt-dlp, conversions via FFmpeg), `preload.js`, interface dans `ui/`.
 
-Ou en une ligne dans PowerShell :
-```powershell
-irm https://raw.githubusercontent.com/Fulberitodesign/videograb/main/setup/install.ps1 | iex
-```
-Désinstaller : `desinstaller.bat` dans le dossier d'installation.
-
-### macOS 11+ (puce Apple ou Intel)
-Dans le Terminal :
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Fulberitodesign/videograb/main/setup/install-mac.sh | bash
+npm install
+npm start          # prepare yt-dlp / ffmpeg dans bin/ puis lance l'application
+npm run dist:win   # installateur Windows dans dist/
+npm run dist:mac   # .dmg macOS (puce Apple)
 ```
-L'application **VideoGrab.app** est créée dans `~/Applications` avec son icône. Python 3.10+ est requis (installé via Homebrew si disponible, sinon la page python.org s'ouvre). FFmpeg est installé via Homebrew ou, à défaut, fourni par `imageio-ffmpeg`.
 
-Ou depuis le ZIP : clic droit sur `installer-mac.command` → Ouvrir.
-Désinstaller : `~/Applications/VideoGrab.app/Contents/Resources/uninstall-mac.sh`.
+Publier une version : changer `version` dans `package.json`, puis pousser un tag `vX.Y.Z`. GitHub Actions construit les installateurs Windows et macOS et les publie dans une Release.
 
-Vos vidéos téléchargées sont toujours conservées.
-
-## Fonctionnement
-
-`videograb.py` démarre un petit serveur local (`127.0.0.1`, protégé par un jeton) et ouvre l'interface (`ui/index.html`) dans une fenêtre d'application Edge ou Chrome. Les téléchargements utilisent [yt-dlp](https://github.com/yt-dlp/yt-dlp) et [FFmpeg](https://ffmpeg.org).
-
-Le site de présentation se trouve dans `docs/` (Netlify : https://videograb-fulbert.netlify.app).
+Le site de présentation se trouve dans `docs/` (https://videograb-fulbert.netlify.app).
 
 ## Droits
 

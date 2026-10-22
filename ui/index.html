@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>VideoGrab</title>
-<link rel="icon" type="image/png" href="/assets/logo.png">
+<link rel="icon" type="image/png" href="logo.png">
 <style>
   :root {
     --glass: rgba(255,255,255,.06);
@@ -52,7 +52,28 @@
     box-shadow: 0 24px 70px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.1);
   }
 
-  main { max-width: 860px; margin: 28px auto; padding: 22px; }
+  main { max-width: 860px; margin: 46px auto 28px; padding: 22px; }
+
+  /* Barre de titre de la fenetre (zone pour deplacer la fenetre) */
+  .titlebar { position: fixed; top: 0; left: 0; right: 0; height: 38px; z-index: 20; -webkit-app-region: drag;
+              display: flex; align-items: center; padding-left: 16px; gap: 8px; color: var(--muted); font-size: 12px; }
+  .titlebar img { width: 16px; height: 16px; }
+  .mac .titlebar { padding-left: 84px; }
+  dialog, .toast { -webkit-app-region: no-drag; }
+
+  /* Conversion d'un fichier local */
+  .drop { display: flex; align-items: center; gap: 14px; margin-top: 12px; padding: 12px 14px; border-radius: 16px;
+          border: 1.5px dashed rgba(255,255,255,.18); background: rgba(255,255,255,.025); transition: .2s; }
+  .drop.over { border-color: rgba(139,123,255,.85); background: rgba(139,123,255,.12); }
+  .drop .ic { width: 38px; height: 38px; flex: none; border-radius: 12px; display: grid; place-items: center;
+              background: linear-gradient(135deg, rgba(139,123,255,.35), rgba(79,209,255,.3)); border: 1px solid var(--stroke-2); }
+  .drop .ic svg { width: 19px; height: 19px; }
+  .drop .txt { flex: 1; min-width: 0; }
+  .drop .txt b { display: block; font-weight: 600; }
+  .drop .txt span { color: var(--muted); font-size: 12.5px; }
+  .drop .txt .file { color: var(--text); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .linkbtn { background: none; border: 0; padding: 0; color: var(--accent-2); text-decoration: underline; font-size: inherit; }
+  .drop .acts { display: flex; gap: 6px; flex: none; }
 
   header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; letter-spacing: .2px; }
@@ -250,9 +271,10 @@
 <body>
 <div class="bg"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span></div>
 
+<div class="titlebar"><img src="logo.svg" alt="">VideoGrab</div>
 <main class="glass">
   <header>
-    <div class="brand"><img class="logo" src="/assets/logo.svg" alt="">VideoGrab</div>
+    <div class="brand"><img class="logo" src="logo.svg" alt="">VideoGrab</div>
     <div style="display:flex;gap:8px">
       <button class="icon-btn" id="openFolder" title="Ouvrir le dossier de telechargement">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
@@ -269,6 +291,18 @@
     <button type="submit" class="btn primary" id="analyze">Charger</button>
   </form>
   <p class="hint" id="introHint">Colle un lien puis clique sur <b>Charger</b> pour voir la vidéo et choisir l'extrait.</p>
+
+  <div class="drop" id="drop">
+    <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+    <div class="txt" id="dropTxt">
+      <b>Convertir une vidéo MP4 en MP3 haute qualité</b>
+      <span>Glisse une vidéo de ton ordinateur ici (MP4, MOV…), ou <button class="linkbtn" id="pickFile" type="button">choisis un fichier</button>. MP3 320 kb/s.</span>
+    </div>
+    <div class="acts" id="dropActs" hidden>
+      <button class="btn primary" type="button" data-fmt="mp3">Convertir en MP3</button>
+      <button class="btn" type="button" id="dropCancel" title="Annuler">✕</button>
+    </div>
+  </div>
 
   <section id="editor" hidden>
     <div class="player">
@@ -369,21 +403,21 @@
       <option value="opera">Opera</option>
       <option value="safari">Safari (Mac)</option>
     </select>
-    <p>Pour Instagram, Facebook, vidéos privées ou avec limite d'âge : choisis le navigateur où tu es connecté (ferme-le si l'accès est refusé).</p>
+    <p>Pour Instagram, Facebook, vidéos privées ou avec limite d'âge : choisis le navigateur où tu es connecté (ferme-le si l'accès est refusé). Firefox est le plus fiable.</p>
   </div>
   <div class="field">
     <label>Moteur yt-dlp</label>
     <div class="line"><button class="btn" id="update" style="flex:1">Mettre à jour yt-dlp</button><button class="btn" id="closeSettings">Fermer</button></div>
     <p>À faire si un site (souvent YouTube) se met à renvoyer des erreurs.</p>
   </div>
-  <p class="credit" style="margin-top:4px">VideoGrab · Créé par <b>Fulbert Adeniyi</b></p>
+  <p class="credit" style="margin-top:4px">VideoGrab <span id="appVersion"></span> · Créé par <b>Fulbert Adeniyi</b></p>
 </dialog>
 
 <div class="toast glass" id="toast"></div>
 
 <script>
-const TOKEN = "{{TOKEN}}";
 const $ = s => document.querySelector(s);
+if (window.vg?.platform === "darwin") document.documentElement.classList.add("mac");
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const MIN_GAP = 0.2, FRAME = 1 / 30;
 
@@ -446,14 +480,10 @@ function parse(txt) {
 }
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-async function api(path, body, method = "POST") {
-  const r = await fetch(path, {
-    method, headers: { "Content-Type": "application/json", "X-Token": TOKEN },
-    body: method === "POST" ? JSON.stringify(body || {}) : undefined,
-  });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(j.error || "Erreur " + r.status);
-  return j;
+// Appel du processus principal de l'application (main.js)
+async function api(route, body) {
+  try { return await window.vg.call(route, body || {}); }
+  catch (e) { throw new Error(String(e.message || e).replace(/^Error invoking remote method '[^']+': (Error: )?/, "")); }
 }
 let toastTimer;
 function toast(msg, err) {
@@ -471,8 +501,11 @@ function segment(el, cb) {
 
 /* ---------- chargement d'un lien */
 $("#paste").onclick = async () => {
-  try { $("#url").value = (await navigator.clipboard.readText()).trim(); $("#searchForm").requestSubmit(); }
-  catch { $("#url").focus(); toast("Fais Ctrl+V dans le champ.", true); }
+  try {
+    const { text } = await api("/api/clipboard");
+    if (!text.trim()) throw new Error();
+    $("#url").value = text.trim(); $("#searchForm").requestSubmit();
+  } catch { $("#url").focus(); toast("Copie d'abord le lien de la vidéo.", true); }
 };
 $("#searchForm").onsubmit = async e => {
   e.preventDefault();
@@ -496,10 +529,10 @@ function loadInfo(info) {
   $("#sub").textContent = [info.uploader, state.dur ? fmt(state.dur).replace(/\.\d$/, "") : "", info.max_height ? info.max_height + "p max" : ""].filter(Boolean).join(" · ");
   $("#thumb").src = info.thumbnail || ""; $("#thumb").hidden = false; video.poster = info.thumbnail || "";
   video.pause(); audio.pause();
-  if (info.preview_audio_track) audio.src = "/preview/" + info.preview_audio_track;
+  if (info.preview_audio_track) audio.src = "vgmedia://preview/" + info.preview_audio_track;
   else { audio.removeAttribute("src"); audio.load(); }
   if (info.preview) {
-    video.src = "/preview/" + info.preview; video.hidden = false; $("#nopreview").hidden = true; $("#bigplay").hidden = false;
+    video.src = "vgmedia://preview/" + info.preview; video.hidden = false; $("#nopreview").hidden = true; $("#bigplay").hidden = false;
   } else {
     video.removeAttribute("src"); video.load(); video.hidden = true; $("#nopreview").hidden = false; $("#bigplay").hidden = true;
   }
@@ -761,8 +794,48 @@ $("#update").onclick = async () => {
 $("#openFolder").onclick = () => api("/api/reveal", {}).catch(e => toast(e.message, true));
 
 /* ---------- maintien du serveur */
-setInterval(() => api("/api/ping").catch(() => { }), 5000);
-api("/api/ping").catch(() => { });
+/* ---------- conversion d'une video de l'ordinateur (MP4...) en MP3 haute qualite */
+let dropFile = null;
+const DROP_DEFAULT = $("#dropTxt").innerHTML;
+function showDropFile(p) {
+  dropFile = p;
+  const name = p.split(/[\\/]/).pop();
+  $("#dropTxt").innerHTML = `<b>Convertir en MP3 haute qualité (320 kb/s)</b><span class="file" title="${esc(p)}">${esc(name)}</span>`;
+  $("#dropActs").hidden = false;
+}
+function resetDrop() {
+  dropFile = null;
+  $("#dropTxt").innerHTML = DROP_DEFAULT;
+  $("#dropActs").hidden = true;
+  $("#pickFile").onclick = pickFile;
+}
+async function pickFile() {
+  try { const r = await api("/api/pick-file"); if (r.path) showDropFile(r.path); } catch (e) { toast(e.message, true); }
+}
+$("#pickFile").onclick = pickFile;
+$("#dropCancel").onclick = resetDrop;
+$("#dropActs").addEventListener("click", async e => {
+  const fmt = e.target.closest("[data-fmt]")?.dataset.fmt;
+  if (!fmt || !dropFile) return;
+  try { await api("/api/convert", { path: dropFile }); pollJobs(); toast("Conversion en MP3 haute qualité lancée"); resetDrop(); }
+  catch (err) { toast(err.message, true); }
+});
+// Un fichier peut etre glisse n'importe ou dans la fenetre
+let dragDepth = 0;
+document.addEventListener("dragenter", e => { e.preventDefault(); dragDepth++; $("#drop").classList.add("over"); });
+document.addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; $("#drop").classList.remove("over"); } });
+document.addEventListener("dragover", e => e.preventDefault());
+document.addEventListener("drop", e => {
+  e.preventDefault(); dragDepth = 0; $("#drop").classList.remove("over");
+  const file = e.dataTransfer?.files?.[0];
+  if (file) { showDropFile(window.vg.pathForFile(file)); $("#drop").scrollIntoView({ behavior: "smooth", block: "center" }); }
+  else {
+    const text = e.dataTransfer?.getData("text/plain") || "";
+    if (/^https?:\/\//.test(text.trim())) { $("#url").value = text.trim(); $("#searchForm").requestSubmit(); }
+  }
+});
+
+api("/api/about").then(a => { $("#appVersion").textContent = `${a.version}${a.ytdlp ? " · yt-dlp " + a.ytdlp : ""}`; }).catch(() => { });
 pollJobs();
 api("/api/settings", null, "GET").then(s => {  // volume de la derniere session
   if (typeof s.volume === "number") { video.volume = clamp(s.volume, 0, 1); video.muted = !!s.muted; }

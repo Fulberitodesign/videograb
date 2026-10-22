@@ -1,0 +1,61 @@
+{
+  "name": "videograb",
+  "version": "2.0.0",
+  "description": "VideoGrab - telechargez une video complete ou juste l'extrait dont votre montage a besoin (YouTube, TikTok, Instagram, 1000+ sites), en MP4 H.264, MP3 ou WAV.",
+  "main": "main.js",
+  "author": "Fulbert Adeniyi",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "prepare-bin": "node scripts/prepare-bin.js",
+    "start": "npm run prepare-bin && electron .",
+    "dist:win": "npm run prepare-bin && electron-builder --win --x64 --publish=never",
+    "dist:mac": "npm run prepare-bin && electron-builder --mac --arm64 --publish=never",
+    "dist:mac-x64": "VG_ARCH=x64 node scripts/prepare-bin.js && electron-builder --mac --x64 --publish=never"
+  },
+  "devDependencies": {
+    "electron": "^45.0.0",
+    "electron-builder": "^26.0.12",
+    "ffmpeg-static": "^5.3.0",
+    "ffprobe-static": "^3.1.0"
+  },
+  "build": {
+    "appId": "com.fulbertadeniyi.videograb",
+    "productName": "VideoGrab",
+    "copyright": "Cree par Fulbert Adeniyi",
+    "files": [
+      "main.js",
+      "preload.js",
+      "ui/**/*"
+    ],
+    "extraResources": [
+      { "from": "bin", "to": "bin" }
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "win": {
+      "target": ["nsis"],
+      "icon": "build/icon.ico",
+      "artifactName": "VideoGrab-Setup.${ext}"
+    },
+    "nsis": {
+      "shortcutName": "VideoGrab",
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "mac": {
+      "target": ["dmg"],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.video",
+      "identity": "-",
+      "artifactName": "VideoGrab-Setup-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "VideoGrab"
+    }
+  }
+}

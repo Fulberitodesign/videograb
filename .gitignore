@@ -4,3 +4,6 @@ config.json
 build/*.png
 build/crop.py
 build/demo-src/
+node_modules/
+dist/
+bin/
