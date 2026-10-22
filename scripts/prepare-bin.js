@@ -26,16 +26,15 @@ function download(url, dest, redirects = 0) {
   });
 }
 
+// La page "latest" redirige vers .../releases/tag/<version> : pas besoin de l'API GitHub
+// (limitee en nombre de requetes sur les machines de build partagees).
 function latestYtdlpTag() {
   return new Promise((resolve, reject) => {
-    https.get("https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest",
-      { headers: { "User-Agent": "videograb-build", Accept: "application/vnd.github+json" } }, res => {
-        let body = "";
-        res.on("data", c => (body += c));
-        res.on("end", () => {
-          try { resolve(JSON.parse(body).tag_name); } catch (e) { reject(e); }
-        });
-      }).on("error", reject);
+    https.get("https://github.com/yt-dlp/yt-dlp/releases/latest", { headers: { "User-Agent": "videograb-build" } }, res => {
+      res.resume();
+      const m = /\/releases\/tag\/([^/?#]+)/.exec(res.headers.location || "");
+      m ? resolve(decodeURIComponent(m[1])) : reject(new Error(`version de yt-dlp introuvable (HTTP ${res.statusCode})`));
+    }).on("error", reject);
   });
 }
 
